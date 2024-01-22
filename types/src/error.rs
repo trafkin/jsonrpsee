@@ -38,7 +38,8 @@ pub type ErrorObjectOwned = ErrorObject<'static>;
 
 /// [Failed JSON-RPC response object](https://www.jsonrpc.org/specification#response_object).
 #[derive(Debug, Deserialize, Serialize, Clone, thiserror::Error)]
-#[serde(deny_unknown_fields)]
+//NOTE: This is needed until ogmios works with the standard (or there is an escape on jsonrpsee)
+//#[serde(deny_unknown_fields)]
 #[error("{self:?}")]
 pub struct ErrorObject<'a> {
 	/// Code
