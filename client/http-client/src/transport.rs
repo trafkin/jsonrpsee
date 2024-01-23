@@ -295,10 +295,16 @@ where
 		let req = req.body(From::from(body)).expect("URI and request headers are valid; qed");
 		let response = self.client.clone().ready().await?.call(req).await?;
 
+
 		if response.status().is_success() {
 			Ok(response)
 		} else {
-			Err(Error::RequestFailure { status_code: response.status().into() })
+		let status = response.status();
+		let (parts, body) = response.into_parts();
+		let (body2, _) = http_helpers::read_body(&parts.headers, body, self.max_response_size).await.unwrap();
+		let body_ut8 = String::from_utf8(body2).unwrap();
+
+			Err(Error::RequestFailure { status_code: status.into(), body: body_ut8 })
 		}
 	}
 
@@ -335,10 +341,12 @@ pub enum Error {
 	Http(Box<dyn std::error::Error + Send + Sync>),
 
 	/// Server returned a non-success status code.
-	#[error("Server returned an error status code: {:?}", status_code)]
+	#[error("Server returned an error status code: {:?} body: {:?}", status_code, body)]
 	RequestFailure {
 		/// Status code returned by the server.
 		status_code: u16,
+		/// json of the response
+		body: String,
 	},
 
 	/// Request body too large.
